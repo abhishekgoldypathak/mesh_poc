@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init-job
+  namespace: business-app
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: db-init
+        image: workspace-service:v2
+        imagePullPolicy: IfNotPresent
+        command:
+          - python
+          - -c
+          - |
+            import asyncio
+            from app.database import engine, Base
+            import app.models
+
+            async def init_db():
+                async with engine.begin() as conn:
+                    await conn.run_sync(Base.metadata.create_all)
+                print("Database tables initialized successfully.")
+
+            asyncio.run(init_db())
+        env:
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://postgres:postgres@postgres-svc.business-app.svc.cluster.local:5432/ebpf_db"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65532
+          allowPrivilegeEscalation: false

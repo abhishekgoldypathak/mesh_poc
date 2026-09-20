@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - postgres.yaml
+  - db-init-job.yaml
   - workspace-service.yaml
   - gateway.yaml
   # - jwt-request-auth.yaml

@@ -1,0 +1,59 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: workspaces.platform.ebpf.io
+spec:
+  group: platform.ebpf.io
+  names:
+    kind: Workspace
+    listKind: WorkspaceList
+    plural: workspaces
+    singular: workspace
+    shortNames:
+      - ws
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                workspaceId:
+                  type: string
+                tenantName:
+                  type: string
+                memgraphVersion:
+                  type: string
+                  default: "2.14"
+                storageSize:
+                  type: string
+                  default: "1Gi"
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                namespace:
+                  type: string
+                endpoint:
+                  type: string
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Tenant
+          type: string
+          jsonPath: .spec.tenantName
+        - name: Status
+          type: string
+          jsonPath: .status.phase
+        - name: Namespace
+          type: string
+          jsonPath: .status.namespace
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
