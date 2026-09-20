@@ -1,0 +1,18 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: enforce-jwt-priority-routing
+  namespace: analytics-tier
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: analytics-waypoint
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["spiffe://cluster.local/ns/analytics-tier/sa/job-dispatcher"]
+    when:
+    - key: request.auth.claims[priority]
+      values: ["P0-CRITICAL"]

@@ -1,0 +1,7 @@
+# 1. Enable Ambient Mesh on namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: analytics-tier
+  labels:
+    istio.io/dataplane-mode: ambient

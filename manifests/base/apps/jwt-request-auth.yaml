@@ -1,0 +1,13 @@
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: waypoint-jwt-auth
+  namespace: analytics-tier
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: analytics-waypoint
+  jwtRules:
+  - issuer: "https://auth.controlplane.internal"
+    jwksUri: "https://auth.controlplane.internal/.well-known/jwks.json"

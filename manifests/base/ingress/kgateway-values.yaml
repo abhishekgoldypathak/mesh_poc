@@ -1,0 +1,8 @@
+# Values for kgateway Control Plane
+controller:
+  replicaCount: 1
+  extraEnv:
+    KGW_ENABLE_EXPERIMENTAL_GATEWAY_API_FEATURES: "true"
+
+validation:
+  level: standard
