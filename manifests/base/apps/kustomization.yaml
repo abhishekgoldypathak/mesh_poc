@@ -3,6 +3,8 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - postgres.yaml
+  - workspace-service.yaml
   - gateway.yaml
-  - jwt-request-auth.yaml
-  - jwt-authorization-policy.yaml
+  # - jwt-request-auth.yaml
+  # - jwt-authorization-policy.yaml
