@@ -7,5 +7,6 @@ resources:
   - db-init-job.yaml
   - workspace-service.yaml
   - gateway.yaml
+  - operator-rbac.yaml
   # - jwt-request-auth.yaml
   # - jwt-authorization-policy.yaml

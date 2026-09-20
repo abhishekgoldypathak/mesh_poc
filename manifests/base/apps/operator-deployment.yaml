@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-orchestrator-controller-manager
+  namespace: kube-system
+  labels:
+    control-plane: controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: db-orchestrator-controller-manager
+      containers:
+      - name: manager
+        image: db-orchestrator/operator:v1
+        imagePullPolicy: IfNotPresent
+        command:
+        - /manager
+        resources:
+          limits:
+            cpu: 20m
+            memory: 32Mi
+          requests:
+            cpu: 1m
+            memory: 5Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532

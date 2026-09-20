@@ -1,93 +1,69 @@
-import asyncio
-import logging
-import uuid
-from typing import List
-from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+import os
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from kubernetes import client, config
 
-from kubernetes_asyncio import client, config
-from kubernetes_asyncio.client.rest import ApiException
+app = FastAPI(title="Workspace Orchestrator API", version="v6.0")
 
-from app.database import engine, Base, get_db
-from app.models import Workspace
-from app.schema import WorkspaceCreate, WorkspaceResponse
+if os.getenv("KUBERNETES_SERVICE_HOST"):
+    config.load_incluster_config()
+else:
+    config.load_kube_config()
 
-app = FastAPI(title="Business Workspace API", version="1.0.0")
+api_instance = client.CustomObjectsApi()
 
-# Initialize K8s client on startup
-@app.on_event("startup")
-async def startup():
-    # Load in-cluster config (or fallback to kubeconfig for local dev)
-    try:
-        config.load_incluster_config()
-    except Exception:
-        await config.load_kube_config()
+GROUP = "platform.ebpf.io"
+VERSION = "v1alpha1"
+NAMESPACE = "business-app"
+PLURAL = "workspaces"
 
-    # DB readiness check
-    retries = 10
-    while retries > 0:
-        try:
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-            break
-        except Exception as e:
-            retries -= 1
-            await asyncio.sleep(2)
+class WorkspaceCreate(BaseModel):
+    name: str
+    tenant_name: str = "default-tenant"
+    memgraph_version: str = "latest"
 
-@app.post("/api/v1/workspaces", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
-async def create_workspace(payload: WorkspaceCreate, db: AsyncSession = Depends(get_db)):
-    # 1. DB Duplicate Check
-    stmt = select(Workspace).where(Workspace.name == payload.name)
-    existing = (await db.execute(stmt)).scalar_one_or_none()
-    if existing:
-        raise HTTPException(status_code=400, detail="Workspace name already exists")
-
-    ws_id = f"ws-{uuid.uuid4().hex[:8]}"
-    tenant_ns = f"memgraph-{ws_id}"
-
-    # 2. Persist to Postgres
-    workspace = Workspace(
-        id=ws_id,
-        name=payload.name,
-        status="PROVISIONING",
-        namespace=tenant_ns
-    )
-    db.add(workspace)
-    await db.commit()
-    await db.refresh(workspace)
-
-    # 3. Create Custom Resource in Kubernetes
-    cr_manifest = {
-        "apiVersion": "platform.ebpf.io/v1alpha1",
+@app.post("/workspaces")
+def create_workspace(body: WorkspaceCreate):
+    tenant = body.tenant_name if body.tenant_name and body.tenant_name != "string" else body.name
+    cr = {
+        "apiVersion": f"{GROUP}/{VERSION}",
         "kind": "Workspace",
         "metadata": {
-            "name": ws_id,
-            "namespace": "business-app"
+            "name": body.name,
+            "namespace": NAMESPACE
         },
         "spec": {
-            "workspaceId": ws_id,
-            "tenantName": payload.name,
-            "memgraphVersion": "2.14"
+            "tenantName": tenant,
+            "storageSize": "100Mi",
+            "memgraphVersion": body.memgraph_version
         }
     }
-
     try:
-        async with client.ApiClient() as api_client:
-            custom_api = client.CustomObjectsApi(api_client)
-            await custom_api.create_namespaced_custom_object(
-                group="platform.ebpf.io",
-                version="v1alpha1",
-                namespace="business-app",
-                plural="workspaces",
-                body=cr_manifest
-            )
-    except ApiException as e:
-        logging.error(f"Failed to emit Workspace CRD: {e}")
-        # Rollback or log error based on requirements
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Database record created, but K8s CRD creation failed: {e.reason}"
+        resp = api_instance.create_namespaced_custom_object(
+            group=GROUP,
+            version=VERSION,
+            namespace=NAMESPACE,
+            plural=PLURAL,
+            body=cr
         )
+        return {"status": "success", "data": resp}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return workspace
+@app.delete("/workspaces/{name}")
+def delete_workspace(name: str):
+    try:
+        resp = api_instance.delete_namespaced_custom_object(
+            group=GROUP,
+            version=VERSION,
+            namespace=NAMESPACE,
+            plural=PLURAL,
+            name=name
+        )
+        return {"status": "deleted", "data": resp}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
