@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "1"
+    meta.helm.sh/release-name: parca
+    meta.helm.sh/release-namespace: monitoring
+  creationTimestamp: "2026-09-20T18:20:09Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: parca-agent
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: parca
+    app.kubernetes.io/version: v0.20.0
+    helm.sh/chart: parca-4.19.0
+  name: parca-agent
+  namespace: monitoring
+  resourceVersion: "34746"
+  uid: c5261cf1-2479-4f4c-b04f-ba0fbe2f07c8
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: parca-agent
+      app.kubernetes.io/name: parca
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: parca-agent
+        app.kubernetes.io/name: parca
+        parca: parca-agent
+    spec:
+      containers:
+      - args:
+        - /bin/parca-agent
+        - --log-level=info
+        - --node=$(NODE_NAME)
+        - --http-address=$(MY_POD_IP):7071
+        - --config-path=/var/parca/parca-agent.yaml
+        - --remote-store-address=parca-server.monitoring.svc.cluster.local:7070
+        - --remote-store-insecure
+        - --remote-store-insecure-skip-verify
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        image: ghcr.io/parca-dev/parca-agent:v0.28.0
+        imagePullPolicy: IfNotPresent
+        name: parca-agent
+        ports:
+        - containerPort: 7071
+          hostPort: 7071
+          name: http
+          protocol: TCP
+        resources: {}
+        securityContext:
+          privileged: true
+          readOnlyRootFilesystem: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /run
+          name: run
+        - mountPath: /lib/modules
+          name: modules
+        - mountPath: /sys/kernel/debug
+          name: debugfs
+        - mountPath: /sys/fs/cgroup
+          name: cgroup
+        - mountPath: /sys/fs/bpf
+          name: bpffs
+        - mountPath: /var/parca
+          name: parca-agent-config
+      dnsPolicy: ClusterFirst
+      hostPID: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      serviceAccount: parca
+      serviceAccountName: parca
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists
+      volumes:
+      - emptyDir: {}
+        name: tmp
+      - hostPath:
+          path: /run
+          type: ""
+        name: run
+      - hostPath:
+          path: /sys/fs/cgroup
+          type: ""
+        name: cgroup
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: modules
+      - hostPath:
+          path: /sys/fs/bpf
+          type: ""
+        name: bpffs
+      - hostPath:
+          path: /sys/kernel/debug
+          type: ""
+        name: debugfs
+      - configMap:
+          defaultMode: 420
+          name: parca-agent-config
+        name: parca-agent-config
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  currentNumberScheduled: 2
+  desiredNumberScheduled: 2
+  numberMisscheduled: 0
+  numberReady: 0
+  numberUnavailable: 2
+  observedGeneration: 1
+  updatedNumberScheduled: 2
