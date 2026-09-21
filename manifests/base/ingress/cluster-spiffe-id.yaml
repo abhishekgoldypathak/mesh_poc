@@ -1,0 +1,12 @@
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: analytics-tier-spiffe-ids
+spec:
+  spiffeIDTemplate: "spiffe://cluster.local/ns/{{ .Meta.namespace }}/sa/{{ .Meta.serviceAccount }}"
+  podSelector:
+    matchLabels:
+      spiffe.io/spire-managed-identity: "true"
+  namespaceSelector:
+    matchLabels:
+      istio.io/dataplane-mode: ambient

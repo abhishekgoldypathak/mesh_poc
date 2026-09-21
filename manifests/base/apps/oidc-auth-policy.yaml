@@ -1,0 +1,12 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: dex-jwt
+  namespace: analytics-tier
+spec:
+  selector:
+    matchLabels:
+      app: fastapi # Adjust this label to match your FastAPI/Go workloads
+  jwtRules:
+    - issuer: "http://dex.dex.svc.cluster.local:5556/dex"
+      jwksUri: "http://dex.dex.svc.cluster.local:5556/dex/keys"

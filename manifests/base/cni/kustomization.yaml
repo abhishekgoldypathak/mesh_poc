@@ -1,5 +1,40 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Reserved for Cilium raw manifests or Kustomize-native Helm chart inflation
-resources: []
+helmCharts:
+  - name: cilium
+    repo: https://helm.cilium.io/
+    version: 1.15.4
+    releaseName: cilium
+    namespace: kube-system
+    valuesInline:
+      kubeProxyReplacement: "strict"
+      encryption:
+        enabled: true
+        type: wireguard
+        nodeEncryption: true
+      l7Proxy: false # Disables Cilium L7 proxy for Istio Ambient co-existence
+      hubble:
+        enabled: true
+        relay:
+          enabled: true
+        ui:
+          enabled: true
+  - name: tetragon
+    repo: https://helm.cilium.io/
+    version: 1.1.0
+    releaseName: tetragon
+    namespace: kube-system
+    valuesInline:
+      tetragon:
+        prometheus:
+          enabled: true
+  - name: parca
+    repo: https://parca-dev.github.io/helm-charts
+    version: 0.21.0
+    releaseName: parca
+    namespace: monitoring
+
+resources:
+  - rendered/cilium-rendered.yaml
+  - tetragon-exec-policy.yaml

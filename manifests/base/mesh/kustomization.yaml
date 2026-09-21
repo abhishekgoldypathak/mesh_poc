@@ -1,5 +1,27 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Reserved for Istio Ambient crds/resources manifests
-resources: []
+helmCharts:
+  - name: base
+    repo: https://istio-release.storage.googleapis.com/charts
+    version: 1.22.0
+    releaseName: istio-base
+    namespace: istio-system
+  - name: istiod
+    repo: https://istio-release.storage.googleapis.com/charts
+    version: 1.22.0
+    releaseName: istiod
+    namespace: istio-system
+    valuesInline:
+      profile: ambient
+      meshConfig:
+        defaultConfig:
+          controlPlaneAuthPolicy: MUTUAL_TLS
+  - name: ztunnel
+    repo: https://istio-release.storage.googleapis.com/charts
+    version: 1.22.0
+    releaseName: ztunnel
+    namespace: istio-system
+    valuesInline:
+      env:
+        SPIFFE_ENDPOINT_SOCKET: "unix:///run/spire/sockets/agent.sock"

@@ -1,0 +1,12 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: genai-app-cluster
+networking:
+  disableDefaultCNI: true # Required so Cilium takes over CNI management
+  podSubnet: "10.250.0.0/16"
+  serviceSubnet: "10.97.0.0/16"
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.34.0
+  - role: worker
+    image: kindest/node:v1.34.0
