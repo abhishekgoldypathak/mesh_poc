@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, APIRouter, HTTPException, status
 from pydantic import BaseModel
 from kubernetes import client, config
 
@@ -29,7 +29,10 @@ class WorkspaceCreate(BaseModel):
     tenant_name: str = "default-tenant"
     memgraph_version: str = "latest"
 
-@app.post("/workspaces", status_code=status.HTTP_201_CREATED)
+# Create a dedicated v1 router
+router = APIRouter(prefix="/api/v1", tags=["Workspaces"])
+
+@router.post("/workspaces", status_code=status.HTTP_201_CREATED)
 def create_workspace(body: WorkspaceCreate):
     tenant = body.tenant_name if body.tenant_name and body.tenant_name != "string" else body.name
     cr = {
@@ -57,7 +60,7 @@ def create_workspace(body: WorkspaceCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/workspaces")
+@router.get("/workspaces")
 def list_workspaces():
     try:
         resp = api_instance.list_namespaced_custom_object(
@@ -70,7 +73,7 @@ def list_workspaces():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/workspaces/{name}")
+@router.delete("/workspaces/{name}")
 def delete_workspace(name: str):
     try:
         resp = api_instance.delete_namespaced_custom_object(
@@ -84,6 +87,9 @@ def delete_workspace(name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/health")
+# Attach router to app
+app.include_router(router)
+
+@app.get("/health", tags=["System"])
 def health():
     return {"status": "healthy"}

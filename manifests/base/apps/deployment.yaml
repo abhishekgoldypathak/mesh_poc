@@ -17,7 +17,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: api
-          image: workspace-service:v6
+          image: workspace-service:v8
           env:
             - name: SPIFFE_ENDPOINT_SOCKET
               value: "unix:///spiffe-workload-api/spire-agent.sock"

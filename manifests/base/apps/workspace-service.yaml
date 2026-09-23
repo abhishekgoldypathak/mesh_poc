@@ -10,13 +10,18 @@ spec:
       app: workspace-service
   template:
     metadata:
+      annotations:
+          traffic.sidecar.istio.io/excludeOutboundPorts: "443"
       labels:
         app: workspace-service
     spec:
-      serviceAccountName: workspace-service-sa  # <-- Ensure SA is attached
+      serviceAccountName: workspace-service-sa
+      automountServiceAccountToken: true
       containers:
-      - name: workspace-service
-        image: workspace-service:v6              # <-- Update tag from v2 to v3
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8000
+        - name: workspace-service
+          image: workspace-service:7005c64
+          env:
+            - name: WORKSPACE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

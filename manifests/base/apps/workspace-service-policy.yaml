@@ -1,0 +1,16 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: workspace-rbac
+  namespace: business-app
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: waypoint
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            methods: ["DELETE"]
+            paths: ["/workspaces/*", "/api/v1/workspaces/*"]

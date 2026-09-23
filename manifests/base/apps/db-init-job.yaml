@@ -10,7 +10,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: db-init
-        image: workspace-service:v6
+        image: workspace-service:v8
         imagePullPolicy: IfNotPresent
         command:
           - python
