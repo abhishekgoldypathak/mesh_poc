@@ -1,4 +1,4 @@
-# Risk-Based Multi-Cluster Microsegmentation via Service Mesh
+# Risk-Based Service Mesh
 
 Data sources
 * SBOM - CycloneDX, SPDX
@@ -14,7 +14,7 @@ Policy Control Point
   * view policies
   * policy drift analysis - policy failed to apply etc.
   * policy playground - VNF lab simulating live network before applying
-  * ML/AI engines to recommend policy etc (temporal unsupervised learning)
+  * ML/AI engines to recommend policy etc 
 
 Policy Decision Point
 * Mesh
