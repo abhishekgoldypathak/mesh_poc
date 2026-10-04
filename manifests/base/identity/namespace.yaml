@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: identity
+  labels:
+    istio.io/dataplane-mode: ambient  # Enrolls identity pod in Istio Ambient mesh

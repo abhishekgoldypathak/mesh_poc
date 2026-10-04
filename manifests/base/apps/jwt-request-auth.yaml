@@ -1,13 +1,12 @@
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication
 metadata:
-  name: waypoint-jwt-auth
-  namespace: analytics-tier
+  name: jwt-auth
+  namespace: business-app
 spec:
-  targetRefs:
-  - group: gateway.networking.k8s.io
-    kind: Gateway
-    name: analytics-waypoint
+  selector:
+    matchLabels:
+      app: workspace-service
   jwtRules:
-  - issuer: "https://auth.controlplane.internal"
-    jwksUri: "https://auth.controlplane.internal/.well-known/jwks.json"
+  - issuer: "http://keycloak.identity.svc.cluster.local:8080/realms/smartsheet-dev"
+    jwksUri: "http://keycloak.identity.svc.cluster.local:8080/realms/smartsheet-dev/protocol/openid-connect/certs"
